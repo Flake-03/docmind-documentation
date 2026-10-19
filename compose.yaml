@@ -1,0 +1,32 @@
+name: docmind
+
+services:
+  mcp:
+    build: ./mcp
+    env_file: ./mcp/.env
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - .:/projects:ro
+      - mcp-data:/data/git
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8000), 1).close()"]
+
+  agents:
+    build:
+      context: ./agents
+      additional_contexts:
+        harness: ./deepseek-harness
+    env_file: ./agents/.env
+    depends_on:
+      mcp:
+        condition: service_healthy
+    init: true
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - agent-data:/data/dsh
+
+volumes:
+  mcp-data:
+  agent-data:
